@@ -42,6 +42,18 @@ public class PTPConsumer {
 		
 	}
 	
+	public void receiveQueueMessagesAsychExcept(String id, String val) {
+		jmsContext = connectionFactory.createContext();
+		try {
+			Queue queue = new com.sun.messaging.Queue("ATJQueue");
+			String sign = " <> '";
+			String test = id + sign + val + "'";
+			jmsConsumer = jmsContext.createConsumer(queue, test);
+			jmsConsumer.setMessageListener(asynchListener);
+		}
+		catch(JMSException e) { e.printStackTrace(); }
+	}
+	
 	public void closeJmsContext() {
 		jmsConsumer.close();
 		jmsContext.close();

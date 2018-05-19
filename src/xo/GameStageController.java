@@ -89,6 +89,7 @@ public class GameStageController {
 			gameStatusLbl.setText("Player " + result + " won");
 		setGameButtonsDisable(true);
 		restartBtn.setDisable(false);
+		QueueAsynchronicConsumer.setOnePlayerAlreadyConnected(false);
 	}
 	
 	 public void initialize() {
@@ -181,7 +182,10 @@ public class GameStageController {
 	@FXML private void restartBtn_Click() {
 		//System.out.println("restart");
 		anotherPlayerOn = false;
-		doCleaning();
+		if(!QueueAsynchronicConsumer.getOnePlayerAlreadyConnected())
+			doCleaning();
+		lastResult = null;
+		lastPosition = null;
 		gameBtn00.setText("");
 		gameBtn01.setText("");
 		gameBtn02.setText("");
@@ -195,9 +199,9 @@ public class GameStageController {
 		act = null;
 		turn = false;
 		connectBtn.setDisable(false);
-		gameCharLbl.setText(null);;
+		gameCharLbl.setText(null);
 		gameStatusLbl.setText(null);
-		doCleaning();
+		restartBtn.setDisable(true);
 	}
 	
 	@FXML private void gameBtn00_Click() {
@@ -391,7 +395,7 @@ public class GameStageController {
 				setTextButton(lastPosition);
 				gameStatusLbl.setText("Twoja tura");
 				showEndGameStatus(lastResult);
-				lastResult = null;
+				//lastResult = null;
 				lastPosition = null;
 				turn = !turn;	
 			}
@@ -430,7 +434,7 @@ public class GameStageController {
 				alert.setTitle("Drugi gracz zrezygnowa³ z gry");
 				alert.setHeaderText("Nie da siê kontynuowaæ");
 				alert.setContentText("Mo¿na wy³¹czyæ i w³¹czyæ grê, czekaj¹c na nowego gracza lub zrobiæ restart");
-
+				//act = null;
 				alert.showAndWait();
 			}
 			
@@ -461,10 +465,12 @@ public class GameStageController {
 			//doCleaning();
 	        consumer.closeJmsContext();
 	        // receive messages if there are any left
+	       // consumer.receiveQueueMessagesAsychExcept("Oconnect", "yes");
 	        consumer.receiveQueueMessagesAsynchronously();
 			try { Thread.sleep(10); }
 			catch (InterruptedException e) { e.printStackTrace(); }
 			consumer.closeJmsContext();
+			QueueAsynchronicConsumer.setOnePlayerAlreadyConnected(false);
 		}
 
         Platform.exit();
@@ -485,7 +491,7 @@ public class GameStageController {
 				TextMessage textMessage = (TextMessage) message;
 				try {
 					
-					if(gameController.anotherPlayerOn) {
+					
 					//System.out.printf("Odebrano wiadomoœæ:'%s'\n",	 textMessage.getText());
 					String a = textMessage.getStringProperty("Oconnect");
 					if( a != null ) 
@@ -511,9 +517,9 @@ public class GameStageController {
 						//System.out.println("pos = " + pos + " res= " + res);
 						gameController.lastPosition = pos;
 						gameController.lastResult = res;
-						gameController.doMessage(); // it's working - if not maybe there are threads from previous use
+						if(gameController.anotherPlayerOn) gameController.doMessage(); // it's working - if not maybe there are threads from previous use
 					}
-					}
+					
 					
 				}
 				catch (JMSException e) { e.printStackTrace(); }
@@ -525,6 +531,10 @@ public class GameStageController {
 		
 		public static boolean getOnePlayerAlreadyConnected() {
 			return onePlayerAlreadyConnected;
-		}		
+		}
+		
+		public static void setOnePlayerAlreadyConnected(boolean a) {
+			onePlayerAlreadyConnected = a;
+		}
 	}
 }
